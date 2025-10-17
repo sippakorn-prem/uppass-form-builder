@@ -25,9 +25,27 @@ import { onMounted } from 'vue';
 
 const formStore = useFormStore()
 
-// Simplified - no auto-loading
+// Auto-load saved schema from localStorage
 onMounted(() => {
-  // No localStorage loading for simplicity
+  try {
+    const single = localStorage.getItem('savedSchema')
+    let saved: any | null = null
+    
+    if (single) {
+      saved = JSON.parse(single)
+    } else {
+      // Fallback to legacy array format
+      const legacy = JSON.parse(localStorage.getItem('savedSchemas') || '[]')
+      saved = Array.isArray(legacy) && legacy.length > 0 ? legacy[0] : null
+    }
+
+    if (saved && saved.schema && Array.isArray(saved.schema.fields)) {
+      // Load the schema into the form store
+      formStore.loadSchema(saved.schema)
+    }
+  } catch (error) {
+    console.error('Error loading saved schema:', error)
+  }
 })
 </script>
 

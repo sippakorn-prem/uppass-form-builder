@@ -26,7 +26,6 @@ export interface FormField {
   key: string
   schema: {
     type: 'string' | 'integer' | 'number' | 'boolean' | 'array'
-    title: string
     minLength?: number
     maxLength?: number
     minimum?: number

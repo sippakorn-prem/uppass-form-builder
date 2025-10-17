@@ -362,9 +362,7 @@ const selectedField = computed(() => {
 })
 
 const generatedSchema = computed(() => {
-  console.log('generatedSchema computed - localBuilderFields:', localBuilderFields.value)
   const schema = generateSchemaFromFields(localBuilderFields.value)
-  console.log('generatedSchema result:', schema)
   return schema
 })
 
@@ -391,16 +389,12 @@ const selectField = (id: string) => {
 }
 
 const updateField = (id: string, updates: Partial<BuilderField>) => {
-  console.log('updateField called with id:', id, 'updates:', updates)
   // Update local array first (this is our source of truth)
   const localIndex = localBuilderFields.value.findIndex(f => f.id === id)
-  console.log('Found local index:', localIndex)
   if (localIndex !== -1 && localBuilderFields.value[localIndex]) {
-    console.log('Before update - local field:', localBuilderFields.value[localIndex])
     // Create a new object to ensure reactivity
     const updatedField = { ...localBuilderFields.value[localIndex], ...updates }
     localBuilderFields.value[localIndex] = updatedField
-    console.log('After update - local field:', localBuilderFields.value[localIndex])
     
     // Also update the store to keep it in sync (but local array is source of truth)
     formStore.updateField(id, updates)
@@ -408,9 +402,7 @@ const updateField = (id: string, updates: Partial<BuilderField>) => {
 }
 
 const updateFieldLabel = (newLabel: string) => {
-  console.log('updateFieldLabel called with:', newLabel)
   if (selectedField.value) {
-    console.log('Updating field:', selectedField.value.id, 'from', selectedField.value.label, 'to', newLabel)
     updateField(selectedField.value.id, { label: newLabel })
   }
 }
@@ -438,8 +430,7 @@ const generateSchemaFromFields = (fields: BuilderField[]): FormSchema => {
   const formFields = fields.map(field => ({
     key: field.config.key || field.id,
     schema: field.config.schema || {
-      type: field.type === 'number' ? 'number' : 'string',
-      title: field.label
+      type: field.type === 'number' ? 'number' : 'string'
     },
     ui: {
       // spread user config first, then override with live values
@@ -469,6 +460,35 @@ const generateSchemaFromFields = (fields: BuilderField[]): FormSchema => {
   }
 }
 
+// Map a FormSchema back into builder fields
+const mapSchemaToBuilderFields = (schema: FormSchema): BuilderField[] => {
+  if (!schema.fields || !Array.isArray(schema.fields)) return []
+  return schema.fields.map((f: any) => {
+    const type = (f.ui?.widget || f.schema?.type || 'text') as 'text' | 'number' | 'select' | 'radio'
+    const id = f.key || `${type}_${Math.random().toString(36).slice(2, 10)}`
+    return {
+      id,
+      type,
+      label: f.ui?.label || id,
+      required: Boolean(f.ui?.required),
+      config: {
+        key: f.key || id,
+        schema: f.schema || {},
+        ui: {
+          widget: type,
+          label: f.ui?.label || id,
+          layout: f.ui?.layout || 'normal',
+          placeholder: f.ui?.placeholder,
+          required: f.ui?.required,
+          options: f.ui?.options,
+          allow_decimal: f.ui?.allow_decimal
+        },
+        logic: f.logic || {}
+      }
+    }
+  })
+}
+
 const getFieldIcon = (type: string) => {
   const icons = {
     text: 'svg',
@@ -492,7 +512,7 @@ const getFieldComponent = (type: string) => {
 const getFieldConfig = (field: BuilderField): FormField => {
   return {
     key: field.config.key || field.id,
-    schema: field.config.schema || { type: 'string', title: field.label },
+    schema: field.config.schema || { type: 'string' },
     ui: {
       // spread first, then force the latest values
       ...field.config.ui,
@@ -527,30 +547,27 @@ const handleClickOutside = (event: Event) => {
 const saveSchema = async () => {
   try {
     isLoading.value = true
-    
-    // Just show success feedback for now - no localStorage
-    successMessage.value = 'Form configuration saved!'
+    const payload = {
+      id: `form_${Date.now()}`,
+      name: 'Generated Form',
+      schema: generateSchemaFromFields(localBuilderFields.value),
+      updatedAt: new Date().toISOString()
+    }
+    localStorage.setItem('savedSchema', JSON.stringify(payload))
+    successMessage.value = 'Saved to browser storage'
     showSuccess.value = true
-    
-    // Auto-hide after 2 seconds
-    setTimeout(() => {
-      showSuccess.value = false
-    }, 2000)
-    
   } catch (error) {
     console.error('Error saving schema:', error)
     successMessage.value = 'Failed to save form. Please try again.'
     showSuccess.value = true
-    setTimeout(() => {
-      showSuccess.value = false
-    }, 2000)
   } finally {
+    setTimeout(() => (showSuccess.value = false), 1600)
     isLoading.value = false
   }
 }
 
 const exportSchema = () => {
-  const schema = formStore.generateSchema()
+  const schema = generateSchemaFromFields(localBuilderFields.value)
   const dataStr = JSON.stringify(schema, null, 2)
   const dataBlob = new Blob([dataStr], { type: 'application/json' })
   const url = URL.createObjectURL(dataBlob)
@@ -567,15 +584,29 @@ const onDragEnd = () => {
   formStore.builderFields = [...localBuilderFields.value]
 }
 
-// Simplified file upload
-const handleFileUpload = (_event: Event) => {
-  // Simplified - just show message for now
-  successMessage.value = 'File upload functionality removed for simplicity'
-  showSuccess.value = true
-  showActionsDropdown.value = false
-  setTimeout(() => {
-    showSuccess.value = false
-  }, 2000)
+const handleFileUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const schema = JSON.parse(e.target?.result as string) as FormSchema
+      const mapped = mapSchemaToBuilderFields(schema)
+      formStore.builderFields = mapped
+      localBuilderFields.value = mapped.map(createDeepCopy)
+      formStore.loadSchema(schema)
+      successMessage.value = 'Loaded from file'
+      showSuccess.value = true
+      showActionsDropdown.value = false
+      if (fileInput.value) fileInput.value.value = ''
+    } catch (err) {
+      console.error('Invalid JSON file', err)
+      successMessage.value = 'Invalid JSON file'
+      showSuccess.value = true
+    }
+  }
+  reader.readAsText(file)
 }
 
 const clearSchema = () => {
@@ -586,16 +617,30 @@ const clearSchema = () => {
   localBuilderFields.value = []
   formStore.selectedFieldId = null
   showActionsDropdown.value = false
+  localStorage.removeItem('savedSchema')
 }
 
 const loadSavedSchemas = () => {
-  // Simplified - just show message for now
-  successMessage.value = 'Load functionality removed for simplicity'
-  showSuccess.value = true
-  showActionsDropdown.value = false
-  setTimeout(() => {
-    showSuccess.value = false
-  }, 2000)
+  try {
+    const raw = localStorage.getItem('savedSchema')
+    if (!raw) {
+      successMessage.value = 'Nothing saved in browser'
+      showSuccess.value = true
+      return
+    }
+    const saved = JSON.parse(raw) as { schema: FormSchema }
+    const mapped = mapSchemaToBuilderFields(saved.schema)
+    formStore.builderFields = mapped
+    localBuilderFields.value = mapped.map(createDeepCopy)
+    formStore.loadSchema(saved.schema)
+    successMessage.value = 'Loaded from browser'
+    showSuccess.value = true
+    showActionsDropdown.value = false
+  } catch (e) {
+    console.error('Failed to load saved schema', e)
+    successMessage.value = 'Failed to load from browser'
+    showSuccess.value = true
+  }
 }
 
 

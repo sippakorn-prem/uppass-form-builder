@@ -139,9 +139,7 @@ const handleSubmit = async () => {
 
 // Watch for schema prop changes (for preview mode)
 watch(() => props.schema, (newSchema) => {
-  console.log('FormRenderer schema prop changed:', newSchema)
   if (newSchema) {
-    console.log('Loading schema into store:', newSchema)
     formStore.loadSchema(newSchema)
   }
 }, { immediate: true })
