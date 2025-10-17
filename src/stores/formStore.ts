@@ -123,8 +123,7 @@ export const useFormStore = defineStore('form', () => {
       config: {
         key: `field_${Date.now()}`,
         schema: {
-          type: type === 'number' ? 'number' : type === 'select' || type === 'radio' ? 'string' : 'string',
-          title: `New ${type} field`
+          type: type === 'number' ? 'number' : type === 'date' ? 'string' : 'string'
         },
         ui: {
           widget: type,

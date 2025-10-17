@@ -128,6 +128,7 @@
                 <path v-else-if="fieldType.type === 'number'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
                 <path v-else-if="fieldType.type === 'select'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 <path v-else-if="fieldType.type === 'radio'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                <path v-else-if="fieldType.type === 'date'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
               {{ fieldType.label }}
             </button>
@@ -164,7 +165,7 @@
             </div>
             
             <!-- Placeholder -->
-            <div v-if="selectedField.type === 'text' || selectedField.type === 'number'">
+            <div v-if="selectedField.type === 'text' || selectedField.type === 'number' || selectedField.type === 'date'">
               <label class="block text-sm font-medium text-gray-700 mb-1">Placeholder</label>
               <input
                 v-model="selectedField.config.ui!.placeholder"
@@ -172,6 +173,30 @@
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 @input="updateFieldConfig"
               />
+            </div>
+            
+            <!-- Min/Max for Number fields -->
+            <div v-if="selectedField.type === 'number'" class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Minimum</label>
+                <input
+                  v-model.number="selectedField.config.schema!.minimum"
+                  type="number"
+                  step="any"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  @input="updateFieldConfig"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Maximum</label>
+                <input
+                  v-model.number="selectedField.config.schema!.maximum"
+                  type="number"
+                  step="any"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  @input="updateFieldConfig"
+                />
+              </div>
             </div>
             
             <!-- Options for Select/Radio -->
@@ -318,6 +343,7 @@ import type { BuilderField, FormField, FormSchema } from '@/types/form'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import draggable from 'vuedraggable'
 import FormRenderer from './FormRenderer.vue'
+import DateInput from './forms/DateInput.vue'
 import NumberInput from './forms/NumberInput.vue'
 import RadioInput from './forms/RadioInput.vue'
 import SelectInput from './forms/SelectInput.vue'
@@ -353,7 +379,8 @@ const fieldTypes = [
   { type: 'text', label: 'Text Input', icon: 'svg' },
   { type: 'number', label: 'Number Input', icon: 'svg' },
   { type: 'select', label: 'Select Dropdown', icon: 'svg' },
-  { type: 'radio', label: 'Radio Buttons', icon: 'svg' }
+  { type: 'radio', label: 'Radio Buttons', icon: 'svg' },
+  { type: 'date', label: 'Date Picker', icon: 'svg' }
 ]
 
 const selectedField = computed(() => {
@@ -464,7 +491,7 @@ const generateSchemaFromFields = (fields: BuilderField[]): FormSchema => {
 const mapSchemaToBuilderFields = (schema: FormSchema): BuilderField[] => {
   if (!schema.fields || !Array.isArray(schema.fields)) return []
   return schema.fields.map((f: any) => {
-    const type = (f.ui?.widget || f.schema?.type || 'text') as 'text' | 'number' | 'select' | 'radio'
+    const type = (f.ui?.widget || f.schema?.type || 'text') as 'text' | 'number' | 'select' | 'radio' | 'date'
     const id = f.key || `${type}_${Math.random().toString(36).slice(2, 10)}`
     return {
       id,
@@ -494,7 +521,8 @@ const getFieldIcon = (type: string) => {
     text: 'svg',
     number: 'svg',
     select: 'svg',
-    radio: 'svg'
+    radio: 'svg',
+    date: 'svg'
   }
   return icons[type as keyof typeof icons] || 'svg'
 }
@@ -504,7 +532,8 @@ const getFieldComponent = (type: string) => {
     text: TextInput,
     number: NumberInput,
     select: SelectInput,
-    radio: RadioInput
+    radio: RadioInput,
+    date: DateInput
   }
   return components[type as keyof typeof components] || TextInput
 }

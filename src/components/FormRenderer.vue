@@ -54,6 +54,14 @@
             :model-value="formStore.formData[field.key]"
             @update:model-value="(value) => formStore.updateFieldValue(field.key, value)"
           />
+          
+          <!-- Date Input -->
+          <DateInput
+            v-else-if="field.ui.widget === 'date'"
+            :field="field"
+            :model-value="formStore.formData[field.key]"
+            @update:model-value="(value: any) => formStore.updateFieldValue(field.key, value)"
+          />
         </div>
         
         <!-- Submit Button -->
@@ -105,6 +113,7 @@
 import { useFormStore } from '@/stores/formStore'
 import type { FormSchema } from '@/types/form'
 import { onMounted, ref, watch } from 'vue'
+import DateInput from './forms/DateInput.vue'
 import NumberInput from './forms/NumberInput.vue'
 import RadioInput from './forms/RadioInput.vue'
 import SelectInput from './forms/SelectInput.vue'
