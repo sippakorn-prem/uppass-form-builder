@@ -21,18 +21,31 @@
 <script setup lang="ts">
 import FormRenderer from '@/components/FormRenderer.vue';
 import { useFormStore } from '@/stores/formStore';
+import { decryptFromStorage } from '@/utils/crypto';
 import { onMounted } from 'vue';
 
 const formStore = useFormStore()
 
 // Auto-load saved schema from localStorage
-onMounted(() => {
+onMounted(async () => {
   try {
     const single = localStorage.getItem('savedSchema')
     let saved: any | null = null
     
     if (single) {
-      saved = JSON.parse(single)
+      console.log('RENDERER: raw from localStorage', single)
+      try {
+        saved = await decryptFromStorage(single)
+        console.log('RENDERER: decrypted result', saved)
+      } catch (e) {
+        try {
+          saved = JSON.parse(single)
+          console.log('RENDERER: fallback plaintext result', saved)
+        } catch {
+          console.error('Failed to parse saved schema payload', e)
+          return
+        }
+      }
     } else {
       // Fallback to legacy array format
       const legacy = JSON.parse(localStorage.getItem('savedSchemas') || '[]')

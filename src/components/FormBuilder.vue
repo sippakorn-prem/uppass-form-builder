@@ -340,6 +340,7 @@
 <script setup lang="ts">
 import { useFormStore } from '@/stores/formStore'
 import type { BuilderField, FormField, FormSchema } from '@/types/form'
+import { decryptFromStorage, encryptForStorage } from '@/utils/crypto'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import draggable from 'vuedraggable'
 import FormRenderer from './FormRenderer.vue'
@@ -582,8 +583,11 @@ const saveSchema = async () => {
       schema: generateSchemaFromFields(localBuilderFields.value),
       updatedAt: new Date().toISOString()
     }
-    localStorage.setItem('savedSchema', JSON.stringify(payload))
-    successMessage.value = 'Saved to browser storage'
+    console.log('SAVE: payload before encrypt', payload)
+    const encrypted = await encryptForStorage(payload)
+    console.log('SAVE: encrypted result', encrypted)
+    localStorage.setItem('savedSchema', encrypted)
+    successMessage.value = 'Saved to browser storage (encrypted)'
     showSuccess.value = true
   } catch (error) {
     console.error('Error saving schema:', error)
@@ -649,15 +653,25 @@ const clearSchema = () => {
   localStorage.removeItem('savedSchema')
 }
 
-const loadSavedSchemas = () => {
+const loadSavedSchemas = async () => {
   try {
     const raw = localStorage.getItem('savedSchema')
+    console.log('LOAD: raw from localStorage', raw)
     if (!raw) {
       successMessage.value = 'Nothing saved in browser'
       showSuccess.value = true
       return
     }
-    const saved = JSON.parse(raw) as { schema: FormSchema }
+    let saved: { schema: FormSchema }
+    try {
+      // Try decrypt first
+      saved = await decryptFromStorage<{ schema: FormSchema }>(raw)
+      console.log('LOAD: decrypted result', saved)
+    } catch (_) {
+      // Fallback for legacy plaintext
+      saved = JSON.parse(raw) as { schema: FormSchema }
+      console.log('LOAD: fallback plaintext result', saved)
+    }
     const mapped = mapSchemaToBuilderFields(saved.schema)
     formStore.builderFields = mapped
     localBuilderFields.value = mapped.map(createDeepCopy)
