@@ -1,10 +1,10 @@
 <template>
-  <nav class="bg-white shadow-sm border-b">
+  <nav class="bg-gray-50 shadow-sm border-b">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center py-4">
         <!-- Logo/Brand -->
         <div class="flex items-center">
-          <router-link to="/" class="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
+          <router-link to="/" class="text-xl font-bold text-black hover:text-gray-700 transition-colors">
             Form Builder
           </router-link>
         </div>
@@ -15,8 +15,8 @@
             to="/"
             class="px-4 py-2 rounded-md text-sm font-medium transition-colors"
             :class="{
-              'bg-blue-100 text-blue-700': $route.path === '/',
-              'text-gray-600 hover:text-gray-900 hover:bg-gray-100': $route.path !== '/'
+              'bg-gray-200 text-black': $route.path === '/',
+              'text-black hover:text-gray-700 hover:bg-gray-100': $route.path !== '/'
             }"
           >
             Home
@@ -25,8 +25,8 @@
             to="/builder"
             class="px-4 py-2 rounded-md text-sm font-medium transition-colors"
             :class="{
-              'bg-blue-100 text-blue-700': $route.path === '/builder',
-              'text-gray-600 hover:text-gray-900 hover:bg-gray-100': $route.path !== '/builder'
+              'bg-gray-200 text-black': $route.path === '/builder',
+              'text-black hover:text-gray-700 hover:bg-gray-100': $route.path !== '/builder'
             }"
           >
             Builder
@@ -35,8 +35,8 @@
             to="/renderer"
             class="px-4 py-2 rounded-md text-sm font-medium transition-colors"
             :class="{
-              'bg-blue-100 text-blue-700': $route.path === '/renderer',
-              'text-gray-600 hover:text-gray-900 hover:bg-gray-100': $route.path !== '/renderer'
+              'bg-gray-200 text-black': $route.path === '/renderer',
+              'text-black hover:text-gray-700 hover:bg-gray-100': $route.path !== '/renderer'
             }"
           >
             Renderer

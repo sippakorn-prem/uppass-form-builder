@@ -104,8 +104,6 @@ export const useFormStore = defineStore('form', () => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      console.log('Form submitted:', formData.value)
       return true
     } catch (error) {
       console.error('Form submission error:', error)

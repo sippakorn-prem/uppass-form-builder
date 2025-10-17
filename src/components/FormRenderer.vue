@@ -21,7 +21,7 @@
         <div 
           v-for="field in formStore.visibleFields" 
           :key="field.key"
-          class="transition-all duration-300 ease-in-out opacity-100 transform translate-y-0"
+          class="transition-all duration-500 ease-in-out opacity-100 transform translate-y-0 animate-fade-in"
         >
           <!-- Text Input -->
           <TextInput
@@ -60,15 +60,15 @@
         <div class="pt-6 border-t border-gray-200">
           <button
             type="submit"
-            :disabled="!formStore.isValid || formStore.isSubmitting"
-            class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="!formStore.isValid || formStore.isSubmitting || isLoading"
+            class="w-full bg-gray-800 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] shadow-md"
           >
-            <span v-if="formStore.isSubmitting" class="flex items-center justify-center">
+            <span v-if="formStore.isSubmitting || isLoading" class="flex items-center justify-center">
               <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Submitting...
+              {{ isLoading ? 'Processing...' : 'Submitting...' }}
             </span>
             <span v-else>
               {{ formStore.currentSchema.submit.label }}
@@ -104,7 +104,7 @@
 <script setup lang="ts">
 import { useFormStore } from '@/stores/formStore'
 import type { FormSchema } from '@/types/form'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import NumberInput from './forms/NumberInput.vue'
 import RadioInput from './forms/RadioInput.vue'
 import SelectInput from './forms/SelectInput.vue'
@@ -117,37 +117,74 @@ interface Props {
 const props = defineProps<Props>()
 const formStore = useFormStore()
 const showSuccess = ref(false)
+const isLoading = ref(false)
 
 const handleSubmit = async () => {
-  const success = await formStore.submitForm()
-  if (success) {
-    showSuccess.value = true
+  try {
+    isLoading.value = true
+    const success = await formStore.submitForm()
+    if (success) {
+      showSuccess.value = true
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => {
+        showSuccess.value = false
+      }, 5000)
+    }
+  } catch (error) {
+    console.error('Form submission error:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
-onMounted(() => {
-  if (props.schema) {
-    formStore.loadSchema(props.schema)
-  } else {
-    // Auto-load saved schema from localStorage
-    try {
-      const single = localStorage.getItem('savedSchema')
-      let saved: any | null = null
-      
-      if (single) {
-        saved = JSON.parse(single)
-      } else {
-        // Fallback to legacy array format
-        const legacy = JSON.parse(localStorage.getItem('savedSchemas') || '[]')
-        saved = Array.isArray(legacy) && legacy.length > 0 ? legacy[0] : null
-      }
-
-      if (saved && saved.schema) {
-        formStore.loadSchema(saved.schema)
-      }
-    } catch (e) {
-      console.error('Failed to load saved schema in renderer:', e)
-    }
+// Watch for schema prop changes (for preview mode)
+watch(() => props.schema, (newSchema) => {
+  console.log('FormRenderer schema prop changed:', newSchema)
+  if (newSchema) {
+    console.log('Loading schema into store:', newSchema)
+    formStore.loadSchema(newSchema)
   }
+}, { immediate: true })
+
+onMounted(() => {
+  // Simplified - no localStorage loading
 })
 </script>
+
+<style scoped>
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+/* Staggered animation for form fields */
+.form-renderer > div:nth-child(1) { animation-delay: 0.1s; }
+.form-renderer > div:nth-child(2) { animation-delay: 0.2s; }
+.form-renderer > div:nth-child(3) { animation-delay: 0.3s; }
+.form-renderer > div:nth-child(4) { animation-delay: 0.4s; }
+.form-renderer > div:nth-child(5) { animation-delay: 0.5s; }
+
+/* Enhanced button interactions */
+button:active {
+  transform: scale(0.98);
+}
+
+/* Smooth transitions for form elements */
+.form-field {
+  transition: all 0.3s ease;
+}
+
+.form-field:hover {
+  transform: translateY(-1px);
+}
+</style>

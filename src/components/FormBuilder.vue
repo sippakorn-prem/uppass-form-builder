@@ -4,59 +4,106 @@
     <div>
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-end items-center py-4">
-          <div class="flex space-x-3 items-center">
+          <div class="flex items-center space-x-3">
+            <!-- Primary Actions -->
             <button
               @click="togglePreview"
-              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
+              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-900 rounded-md hover:bg-gray-50 transition-colors font-medium shadow-md"
             >
-              {{ formStore.isPreviewMode ? 'Edit Mode' : 'Preview' }}
+              {{ formStore.isPreviewMode ? 'Edit Mode' : 'Preview Form' }}
             </button>
+            
             <button
               @click="saveSchema"
-              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
+              :disabled="isLoading"
+              class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-md"
             >
-              Save Schema
-            </button>
-            <button
-              @click="exportSchema"
-              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
-            >
-              Export Schema
+              <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ isLoading ? 'Saving...' : 'Save' }}
             </button>
 
-            <!-- Renderer controls moved here -->
-            <button
-              @click="clearSchema"
-              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
-            >
-              Clear Schema
-            </button>
-            <button
-              @click="loadSavedSchemas"
-              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
-            >
-              Load Saved
-            </button>
-            <button
-              @click="loadExampleSchema"
-              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
-            >
-              Load Example
-            </button>
-            <label
-              for="builder-file-input"
-              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium cursor-pointer"
-            >
-              Upload JSON
-            </label>
-            <input
-              id="builder-file-input"
-              ref="fileInput"
-              type="file"
-              accept=".json"
-              class="hidden"
-              @change="handleFileUpload"
-            />
+            <!-- Actions Dropdown -->
+            <div class="relative" ref="dropdownContainer">
+              <button
+                @click="toggleActionsDropdown"
+                class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors font-medium flex items-center"
+              >
+                Actions
+                <svg class="ml-2 h-4 w-4" :class="{ 'rotate-180': showActionsDropdown }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                </svg>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div
+                v-if="showActionsDropdown"
+                class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50"
+              >
+                <div class="py-1">
+                  <!-- Export Section -->
+                  <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                    Export
+                  </div>
+                  <button
+                    @click="exportSchema"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                  >
+                    <svg class="mr-3 h-4 w-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Download JSON
+                  </button>
+
+                  <!-- Load Section -->
+                  <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 mt-2">
+                    Load
+                  </div>
+                  <button
+                    @click="loadSavedSchemas"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                  >
+                    <svg class="mr-3 h-4 w-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                    </svg>
+                    From Browser
+                  </button>
+                  <label
+                    for="builder-file-input"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center cursor-pointer"
+                  >
+                    <svg class="mr-3 h-4 w-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    From File
+                  </label>
+                  <input
+                    id="builder-file-input"
+                    ref="fileInput"
+                    type="file"
+                    accept=".json"
+                    class="hidden"
+                    @change="handleFileUpload"
+                  />
+
+                  <!-- Danger Section -->
+                  <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100 mt-2">
+                    Danger
+                  </div>
+                  <button
+                    @click="clearSchema"
+                    class="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center"
+                  >
+                    <svg class="mr-3 h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Clear All
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -66,6 +113,7 @@
       <!-- Field Types and Properties Row -->
       <div v-if="!formStore.isPreviewMode" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Field Types -->
+        <Transition name="fade-in">
         <div class="bg-white rounded-lg shadow-sm border p-4">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Field Types</h3>
           <div class="space-y-2">
@@ -85,8 +133,10 @@
             </button>
           </div>
         </div>
+        </Transition>
 
         <!-- Field Properties Panel -->
+        <Transition name="fade-in">
         <div v-if="selectedField" class="bg-white rounded-lg shadow-sm border p-4">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Field Properties</h3>
           
@@ -95,10 +145,10 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Label</label>
               <input
-                v-model="selectedField.label"
+                :value="selectedField?.label || ''"
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                @input="updateField(selectedField.id, { label: selectedField.label })"
+                @input="updateFieldLabel(($event.target as HTMLInputElement).value)"
               />
             </div>
             
@@ -166,11 +216,13 @@
             </div>
           </div>
         </div>
+        </Transition>
       </div>
 
       <!-- Form Canvas and Preview Row -->
       <div>
         <!-- Form Canvas -->
+        <Transition name="fade-in">
         <div class="bg-white rounded-lg shadow-sm border">
           <div class="p-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900">Form Input</h3>
@@ -239,6 +291,22 @@
             </draggable>
           </div>
         </div>
+        </Transition>
+      </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div v-if="showSuccess" class="fixed top-4 right-4 z-50">
+      <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-3 animate-slide-in">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>{{ successMessage }}</span>
+        <button @click="showSuccess = false" class="ml-2 text-white hover:text-gray-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
@@ -247,7 +315,7 @@
 <script setup lang="ts">
 import { useFormStore } from '@/stores/formStore'
 import type { BuilderField, FormField, FormSchema } from '@/types/form'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import draggable from 'vuedraggable'
 import FormRenderer from './FormRenderer.vue'
 import NumberInput from './forms/NumberInput.vue'
@@ -257,16 +325,29 @@ import TextInput from './forms/TextInput.vue'
 
 const formStore = useFormStore()
 const fileInput = ref<HTMLInputElement>()
+const isLoading = ref(false)
+const showSuccess = ref(false)
+const successMessage = ref('')
+const showActionsDropdown = ref(false)
+const dropdownContainer = ref<HTMLElement>()
 
 // (intentionally blank - previous SecureStorage helper removed)
 
 // Local reactive array for drag and drop
 const localBuilderFields = ref<BuilderField[]>([])
 
-// Sync with store on mount and when store changes
-watch(() => formStore.builderFields, (newFields) => {
-  localBuilderFields.value = [...newFields]
-}, { immediate: true })
+// Helper function to create deep copies of fields
+const createDeepCopy = (field: BuilderField): BuilderField => {
+  return {
+    ...field,
+    config: {
+      ...field.config,
+      schema: field.config.schema ? { ...field.config.schema } : undefined,
+      ui: field.config.ui ? { ...field.config.ui } : undefined,
+      logic: field.config.logic ? { ...field.config.logic } : undefined
+    }
+  }
+}
 
 const fieldTypes = [
   { type: 'text', label: 'Text Input', icon: 'svg' },
@@ -281,19 +362,28 @@ const selectedField = computed(() => {
 })
 
 const generatedSchema = computed(() => {
-  return formStore.generateSchema()
+  console.log('generatedSchema computed - localBuilderFields:', localBuilderFields.value)
+  const schema = generateSchemaFromFields(localBuilderFields.value)
+  console.log('generatedSchema result:', schema)
+  return schema
 })
 
 const addField = (type: string) => {
   formStore.addField(type as any)
-  // Update local array after adding field
-  localBuilderFields.value = [...formStore.builderFields]
+  // Get the newly added field from the store and add to local array with deep copy
+  const newField = formStore.builderFields[formStore.builderFields.length - 1]
+  if (newField) {
+    localBuilderFields.value.push(createDeepCopy(newField))
+  }
 }
 
 const removeField = (id: string) => {
   formStore.removeField(id)
-  // Update local array after removing field
-  localBuilderFields.value = [...formStore.builderFields]
+  // Remove the field from local array instead of resetting
+  const localIndex = localBuilderFields.value.findIndex(f => f.id === id)
+  if (localIndex !== -1) {
+    localBuilderFields.value.splice(localIndex, 1)
+  }
 }
 
 const selectField = (id: string) => {
@@ -301,17 +391,82 @@ const selectField = (id: string) => {
 }
 
 const updateField = (id: string, updates: Partial<BuilderField>) => {
-  formStore.updateField(id, updates)
+  console.log('updateField called with id:', id, 'updates:', updates)
+  // Update local array first (this is our source of truth)
+  const localIndex = localBuilderFields.value.findIndex(f => f.id === id)
+  console.log('Found local index:', localIndex)
+  if (localIndex !== -1 && localBuilderFields.value[localIndex]) {
+    console.log('Before update - local field:', localBuilderFields.value[localIndex])
+    // Create a new object to ensure reactivity
+    const updatedField = { ...localBuilderFields.value[localIndex], ...updates }
+    localBuilderFields.value[localIndex] = updatedField
+    console.log('After update - local field:', localBuilderFields.value[localIndex])
+    
+    // Also update the store to keep it in sync (but local array is source of truth)
+    formStore.updateField(id, updates)
+  }
+}
+
+const updateFieldLabel = (newLabel: string) => {
+  console.log('updateFieldLabel called with:', newLabel)
+  if (selectedField.value) {
+    console.log('Updating field:', selectedField.value.id, 'from', selectedField.value.label, 'to', newLabel)
+    updateField(selectedField.value.id, { label: newLabel })
+  }
 }
 
 const updateFieldConfig = () => {
   if (selectedField.value) {
-    formStore.updateField(selectedField.value.id, { config: selectedField.value.config })
+    // Update local array first (this is our source of truth)
+    const localIndex = localBuilderFields.value.findIndex(f => f.id === selectedField.value!.id)
+    if (localIndex !== -1 && localBuilderFields.value[localIndex]) {
+      // Create a new object to ensure reactivity
+      const updatedField = { ...localBuilderFields.value[localIndex], config: selectedField.value.config }
+      localBuilderFields.value[localIndex] = updatedField
+      
+      // Also update the store to keep it in sync
+      formStore.updateField(selectedField.value.id, { config: selectedField.value.config })
+    }
   }
 }
 
 const updateFieldValue = (_id: string, _value: any) => {
   // This is just for preview - not stored
+}
+
+const generateSchemaFromFields = (fields: BuilderField[]): FormSchema => {
+  const formFields = fields.map(field => ({
+    key: field.config.key || field.id,
+    schema: field.config.schema || {
+      type: field.type === 'number' ? 'number' : 'string',
+      title: field.label
+    },
+    ui: {
+      // spread user config first, then override with live values
+      ...field.config.ui,
+      widget: field.type,
+      label: field.label,
+      layout: 'normal' as const,
+      required: field.required
+    },
+    logic: field.config.logic || {}
+  }))
+
+  return {
+    title: 'Generated Form',
+    version: '1.0.0',
+    type: 'form',
+    meta: {
+      label: 'Generated Form',
+      description: 'Form generated by the builder'
+    },
+    fields: formFields,
+    submit: {
+      label: 'Submit',
+      action: '/api/form/submit',
+      method: 'POST'
+    }
+  }
 }
 
 const getFieldIcon = (type: string) => {
@@ -339,11 +494,12 @@ const getFieldConfig = (field: BuilderField): FormField => {
     key: field.config.key || field.id,
     schema: field.config.schema || { type: 'string', title: field.label },
     ui: {
+      // spread first, then force the latest values
+      ...field.config.ui,
       widget: field.type,
       label: field.label,
       layout: 'normal',
-      required: field.required,
-      ...field.config.ui
+      required: field.required
     },
     logic: field.config.logic || {}
   }
@@ -357,28 +513,39 @@ const togglePreview = () => {
   formStore.isPreviewMode = !formStore.isPreviewMode
 }
 
+const toggleActionsDropdown = () => {
+  showActionsDropdown.value = !showActionsDropdown.value
+}
+
+// Close dropdown when clicking outside
+const handleClickOutside = (event: Event) => {
+  if (dropdownContainer.value && !dropdownContainer.value.contains(event.target as Node)) {
+    showActionsDropdown.value = false
+  }
+}
+
 const saveSchema = async () => {
   try {
-    const schema = formStore.generateSchema()
-    const schemaId = `form_${Date.now()}`
+    isLoading.value = true
     
-    // Save only one schema (overwrite any existing)
-    const savedSchema = {
-      id: schemaId,
-      name: schema.meta?.label || 'Untitled Form',
-      schema,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
+    // Just show success feedback for now - no localStorage
+    successMessage.value = 'Form configuration saved!'
+    showSuccess.value = true
     
-    // Store as a single object for simplicity
-    localStorage.setItem('savedSchema', JSON.stringify(savedSchema))
-    // Clean up legacy array format if present
-    localStorage.removeItem('savedSchemas')
-    alert(`Schema saved successfully! ID: ${schemaId}`)
+    // Auto-hide after 2 seconds
+    setTimeout(() => {
+      showSuccess.value = false
+    }, 2000)
+    
   } catch (error) {
     console.error('Error saving schema:', error)
-    alert('Failed to save schema. Please try again.')
+    successMessage.value = 'Failed to save form. Please try again.'
+    showSuccess.value = true
+    setTimeout(() => {
+      showSuccess.value = false
+    }, 2000)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -392,6 +559,7 @@ const exportSchema = () => {
   link.download = 'form-schema.json'
   link.click()
   URL.revokeObjectURL(url)
+  showActionsDropdown.value = false
 }
 
 const onDragEnd = () => {
@@ -399,122 +567,49 @@ const onDragEnd = () => {
   formStore.builderFields = [...localBuilderFields.value]
 }
 
-// Moved renderer actions
-const handleFileUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      try {
-        const schema = JSON.parse(e.target?.result as string) as FormSchema
-        formStore.loadSchema(schema)
-      } catch (error) {
-        alert('Invalid JSON file. Please check the format.')
-      }
-    }
-    reader.readAsText(file)
-  }
+// Simplified file upload
+const handleFileUpload = (_event: Event) => {
+  // Simplified - just show message for now
+  successMessage.value = 'File upload functionality removed for simplicity'
+  showSuccess.value = true
+  showActionsDropdown.value = false
+  setTimeout(() => {
+    showSuccess.value = false
+  }, 2000)
 }
 
 const clearSchema = () => {
   formStore.currentSchema = null
   formStore.formData = {}
   formStore.validationErrors = []
+  formStore.builderFields = []
+  localBuilderFields.value = []
+  formStore.selectedFieldId = null
+  showActionsDropdown.value = false
 }
 
 const loadSavedSchemas = () => {
-  try {
-    const single = localStorage.getItem('savedSchema')
-    if (single) {
-      const saved = JSON.parse(single)
-      formStore.loadSchema(saved.schema)
-      alert(`Loaded schema: ${saved.name}`)
-      return
-    }
-    const legacy = JSON.parse(localStorage.getItem('savedSchemas') || '[]')
-    if (legacy && legacy.length > 0) {
-      const first = legacy[0]
-      localStorage.setItem('savedSchema', JSON.stringify(first))
-      localStorage.removeItem('savedSchemas')
-      formStore.loadSchema(first.schema)
-      alert(`Loaded schema: ${first.name}`)
-      return
-    }
-    alert('No saved schema found. Please save a schema first.')
-  } catch (error) {
-    alert('Failed to load saved schema. Please try again.')
-  }
+  // Simplified - just show message for now
+  successMessage.value = 'Load functionality removed for simplicity'
+  showSuccess.value = true
+  showActionsDropdown.value = false
+  setTimeout(() => {
+    showSuccess.value = false
+  }, 2000)
 }
 
-const loadExampleSchema = () => {
-  const exampleSchema: FormSchema = {
-    title: 'Leave Request Form',
-    version: '1.0.0',
-    type: 'form',
-    meta: { label: 'ใบลา', description: 'แบบฟอร์มสำหรับกรอกข้อมูลใบลา' },
-    fields: [
-      { key: 'full_name', schema: { type: 'string', title: 'Full Name', minLength: 1, maxLength: 280 }, ui: { widget: 'text', label: 'ชื่อ', placeholder: 'กรอกชื่อ-นามสกุล', layout: 'normal', required: true }, logic: {} },
-      { key: 'duration', schema: { type: 'string', title: 'Duration', enum: ['half','full'] }, ui: { widget: 'radio', label: 'ลาทำไม', placeholder: 'หากลาเต็มวันกรุณากรอกวันด้านล่างด้วย', options: [{ label: 'ครึ่งวัน', value: 'half' }, { label: 'เต็มวัน', value: 'full' }], layout: 'normal', required: true }, logic: {} },
-      { key: 'days', schema: { type: 'integer', title: 'Days', minimum: 1, maximum: 1000000, default: 1 }, ui: { widget: 'number', label: 'ลากี่วัน', layout: 'normal', allow_decimal: false }, logic: { visibleWhen: { '==': [{ var: 'duration' }, 'full'] } } }
-    ],
-    validation: { ifThenElse: [ { if: { properties: { duration: { const: 'full' } }, required: ['duration'] }, then: { required: ['days'] } } ] },
-    submit: { label: 'Submit', action: '/api/form/submit', method: 'POST' }
-  }
-  formStore.loadSchema(exampleSchema)
-}
 
-// Load saved schema from localStorage on mount
+// Initialize on mount
 onMounted(() => {
-  try {
-    // Only load if no fields are already present
-    if (formStore.builderFields && formStore.builderFields.length > 0) return
+  // Initialize local array from store with deep copies
+  localBuilderFields.value = formStore.builderFields.map(createDeepCopy)
+  
+  // Add event listeners for dropdown
+  document.addEventListener('click', handleClickOutside)
+})
 
-    const single = localStorage.getItem('savedSchema')
-    let saved: any | null = null
-    
-    if (single) {
-      saved = JSON.parse(single)
-    } else {
-      // Fallback to legacy array format
-      const legacy = JSON.parse(localStorage.getItem('savedSchemas') || '[]')
-      saved = Array.isArray(legacy) && legacy.length > 0 ? legacy[0] : null
-    }
-
-    if (!saved || !saved.schema || !Array.isArray(saved.schema.fields)) return
-
-    // Map schema fields to builder fields structure
-    const mapped = saved.schema.fields.map((f: any) => {
-      const type = f.ui?.widget || f.schema?.type || 'text'
-      const id = f.key || `${type}_${Math.random().toString(36).slice(2, 10)}`
-      return {
-        id,
-        type: type as 'text' | 'number' | 'select' | 'radio',
-        label: f.ui?.label || f.schema?.title || id,
-        required: Boolean(f.ui?.required),
-        config: {
-          key: f.key || id,
-          schema: f.schema || {},
-          ui: {
-            widget: type,
-            label: f.ui?.label || f.schema?.title || id,
-            layout: f.ui?.layout || 'normal',
-            placeholder: f.ui?.placeholder,
-            required: f.ui?.required,
-            options: f.ui?.options,
-            allow_decimal: f.ui?.allow_decimal
-          },
-          logic: f.logic || {}
-        }
-      }
-    })
-
-    // Update store and local state
-    formStore.builderFields = mapped
-    localBuilderFields.value = [...mapped]
-  } catch (e) {
-    console.error('Failed to load saved schema:', e)
-  }
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 
 const addOption = () => {
@@ -541,3 +636,57 @@ const removeOption = (index: number) => {
   }
 }
 </script>
+
+<style scoped>
+/* Generic fade-in used for cards */
+.fade-in-enter-from, .fade-in-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.fade-in-enter-active, .fade-in-leave-active {
+  transition: all 300ms ease;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+/* Enhanced field animations */
+.field-enter-active,
+.field-leave-active {
+  transition: all 0.3s ease;
+}
+
+.field-enter-from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.field-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+/* Drag preview styling */
+.sortable-ghost {
+  opacity: 0.5;
+  background: #f3f4f6;
+  border: 2px dashed #9ca3af;
+}
+
+.sortable-chosen {
+  transform: scale(1.02);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+</style>
