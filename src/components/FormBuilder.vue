@@ -461,12 +461,15 @@ import type { BuilderField, FormField, FormSchema } from '@/types/form'
 import { decryptFromStorage, encryptForStorage } from '@/utils/crypto'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import draggable from 'vuedraggable'
+import exampleSchemaJSON from '../../example.json?raw'
 import FormRenderer from './FormRenderer.vue'
 import DateInput from './forms/DateInput.vue'
 import NumberInput from './forms/NumberInput.vue'
 import RadioInput from './forms/RadioInput.vue'
 import SelectInput from './forms/SelectInput.vue'
 import TextInput from './forms/TextInput.vue'
+
+const exampleSchema: FormSchema = JSON.parse(exampleSchemaJSON)
 
 const formStore = useFormStore()
 const fileInput = ref<HTMLInputElement>()
@@ -894,9 +897,6 @@ const clearSchema = () => {
 
 const loadExampleSchema = async () => {
   try {
-    const response = await fetch('/example.json')
-    const exampleSchema: FormSchema = await response.json()
-    
     const mapped = mapSchemaToBuilderFields(exampleSchema)
     formStore.builderFields = mapped
     localBuilderFields.value = mapped.map(createDeepCopy)

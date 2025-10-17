@@ -60,7 +60,7 @@ export async function decrypt<T = unknown>(payload: string, SECRET_KEY: string):
 
 // Centralized passphrase for localStorage encryption in this demo.
 // In production, do NOT hardcode; source from env/secret manager or user input.
-export const STORAGE_PASSPHRASE = process.env.STORAGE_PASSPHRASE || 'uppass-demo-key'
+export const STORAGE_PASSPHRASE = import.meta.env.VITE_STORAGE_PASSPHRASE || 'uppass-demo-key'
 
 export async function encryptForStorage(value: unknown): Promise<string> {
   return encrypt(value, STORAGE_PASSPHRASE)
