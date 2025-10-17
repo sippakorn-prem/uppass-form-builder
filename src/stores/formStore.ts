@@ -93,6 +93,35 @@ export const useFormStore = defineStore('form', () => {
       validateField(field.key)
     })
 
+    // Evaluate schema-level conditional rules (ifThenElse)
+    try {
+      const rules = currentSchema.value.validation?.ifThenElse || []
+      if (rules.length > 0) {
+        const ajv = new Ajv()
+        rules.forEach((rule: any) => {
+          if (!rule || !rule.if) return
+          // Build a minimal object schema from the 'if' fragment
+          const ifSchema = { type: 'object', ...rule.if }
+          const validateIf = ajv.compile(ifSchema as any)
+          const conditionMet = validateIf(formData.value)
+
+          if (conditionMet && rule.then && Array.isArray(rule.then.required)) {
+            ;(rule.then.required as string[]).forEach((fieldKey) => {
+              const v = (formData.value as any)[fieldKey]
+              if (v === undefined || v === null || v === '') {
+                validationErrors.value.push({
+                  field: fieldKey,
+                  message: `${fieldKey} is required`
+                })
+              }
+            })
+          }
+        })
+      }
+    } catch (e) {
+      console.warn('Validation rules evaluation error:', e)
+    }
+
     return isValid.value
   }
 

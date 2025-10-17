@@ -1,0 +1,80 @@
+{
+    "title": "Leave Request Form",
+    "version": "1.0.0",
+    "type": "form",
+    "meta": {
+      "label": "ใบลา",
+      "description": "แบบฟอร์มสำหรับกรอกข้อมูลใบลา"
+    },
+    "fields": [
+      {
+        "key": "full_name",
+        "schema": {
+          "type": "string",
+          "title": "Full Name",
+          "minLength": 1,
+          "maxLength": 280
+        },
+        "ui": {
+          "widget": "text",
+          "label": "ชื่อ",
+          "placeholder": "กรอกชื่อ-นามสกุล",
+          "layout": "normal",
+          "required": true
+        },
+        "logic": {}
+      },
+      {
+        "key": "duration",
+        "schema": {
+          "type": "string",
+          "title": "Duration",
+          "enum": ["half", "full"]
+        },
+        "ui": {
+          "widget": "radio",
+          "label": "ลาทำไม",
+          "placeholder": "หากลาเต็มวันกรุณากรอกวันด้านล่างด้วย",
+          "options": [
+            { "label": "ครึ่งวัน", "value": "half" },
+            { "label": "เต็มวัน", "value": "full" }
+          ],
+          "layout": "normal",
+          "required": true
+        },
+        "logic": {}
+      },
+      {
+        "key": "days",
+        "schema": {
+          "type": "integer",
+          "title": "Days",
+          "minimum": 1,
+          "maximum": 1000000,
+          "default": 1
+        },
+        "ui": {
+          "widget": "number",
+          "label": "ลากี่วัน",
+          "layout": "normal",
+          "allow_decimal": false
+        },
+        "logic": {
+          "visibleWhen": { "==": [{ "var": "duration" }, "full"] }
+        }
+      }
+    ],
+    "validation": {
+      "ifThenElse": [
+        {
+          "if": { "properties": { "duration": { "const": "full" } }, "required": ["duration"] },
+          "then": { "required": ["days"] }
+        }
+      ]
+    },
+    "submit": {
+      "label": "Submit",
+      "action": "/api/form/submit",
+      "method": "POST"
+    }
+}

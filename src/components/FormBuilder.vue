@@ -62,6 +62,15 @@
                     Load
                   </div>
                   <button
+                    @click="loadExampleSchema"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                  >
+                    <svg class="mr-3 h-4 w-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Load Example
+                  </button>
+                  <button
                     @click="loadSavedSchemas"
                     class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
                   >
@@ -152,7 +161,69 @@
                 @input="updateFieldLabel(($event.target as HTMLInputElement).value)"
               />
             </div>
+
+            <!-- Field Key (form parameter name) -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Key (Form parameter)</label>
+              <input
+                v-model="selectedField.config.key"
+                type="text"
+                placeholder="e.g. full_name, duration, days"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                @input="updateFieldConfig"
+              />
+              <p class="text-xs text-gray-500 mt-1">Using for referencing the field in the form data.</p>
+            </div>
             
+            <!-- Visibility Rules -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Visibility Rules</label>
+              <!-- Current Visible When Rule -->
+              <div v-if="selectedField.config.logic?.visibleWhen" class="mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm">
+                    <span class="font-medium text-blue-800">Show when:</span>
+                    <span class="ml-2 text-blue-700 font-mono text-xs">{{ formatRuleForDisplay(selectedField.config.logic.visibleWhen) }}</span>
+                  </div>
+                  <button 
+                    type="button" 
+                    @click="clearVisibleWhenRule"
+                    class="text-red-500 hover:text-red-700 text-sm"
+                    title="Remove show rule"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+
+
+              <!-- Simple Builder -->
+              <div class="mb-2 flex items-center gap-2">
+                <select v-model="ruleKey" class="px-2 py-2 border rounded text-sm flex-1">
+                  <option v-for="k in availableKeys" :key="k" :value="k">{{ k }}</option>
+                </select>
+                <select v-model="ruleOp" class="px-2 py-2 border rounded text-sm w-32">
+                  <option value="==">equals</option>
+                  <option value="!=">not equals</option>
+                  <option value=">">greater than</option>
+                  <option value="<">less than</option>
+                  <option value=">=">greater or equal</option>
+                  <option value="<=">less or equal</option>
+                  <option value="!!">is truthy</option>
+                </select>
+                <input
+                  v-if="ruleOp !== '!!'"
+                  v-model="ruleValue"
+                  type="text"
+                  placeholder="value"
+                  class="px-2 py-2 border rounded text-sm flex-1"
+                />
+                <button type="button" @click="applySimpleRule" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 whitespace-nowrap">Apply</button>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">Field is visible when this condition is true.</p>
+            </div>
+
             <!-- Required -->
             <div class="flex items-center">
               <input
@@ -363,6 +434,105 @@ const dropdownContainer = ref<HTMLElement>()
 // Local reactive array for drag and drop
 const localBuilderFields = ref<BuilderField[]>([])
 
+// JsonLogic editor state for selected field
+const logicText = ref('')
+const availableKeys = computed(() => {
+  // List keys from existing builder fields
+  return localBuilderFields.value
+    .map((f) => f.config.key || f.id)
+    .filter(Boolean)
+})
+const ruleKey = ref('')
+const ruleOp: any = ref('==')
+const ruleValue = ref('')
+
+const syncLogicEditor = () => {
+  const f = selectedField.value
+  if (!f) {
+    logicText.value = ''
+    return
+  }
+  const rule = f.config.logic?.visibleWhen
+  logicText.value = rule ? JSON.stringify(rule, null, 2) : ''
+}
+
+
+
+const applySimpleRule = () => {
+  const key = ruleKey.value || availableKeys.value[0]
+  if (!key) return
+  let json: any
+  if (ruleOp.value === '!!') {
+    json = { '!!': [{ var: key }] }
+  } else {
+    const val: any = isNaN(Number(ruleValue.value)) ? ruleValue.value : Number(ruleValue.value)
+    json = { [ruleOp.value]: [{ var: key }, val] }
+  }
+  
+  // Apply to visibleWhen
+  if (selectedField.value) {
+    selectedField.value.config.logic = selectedField.value.config.logic || {}
+    selectedField.value.config.logic.visibleWhen = json
+    updateFieldConfig()
+  }
+}
+
+const formatRuleForDisplay = (rule: any): string => {
+  if (!rule) return 'No rule'
+  
+  try {
+    // Handle common JsonLogic patterns
+    if (rule['==']) {
+      const [varPart, value] = rule['==']
+      const key = varPart?.var || 'field'
+      return `${key} equals "${value}"`
+    }
+    if (rule['!=']) {
+      const [varPart, value] = rule['!=']
+      const key = varPart?.var || 'field'
+      return `${key} not equals "${value}"`
+    }
+    if (rule['>']) {
+      const [varPart, value] = rule['>']
+      const key = varPart?.var || 'field'
+      return `${key} greater than ${value}`
+    }
+    if (rule['<']) {
+      const [varPart, value] = rule['<']
+      const key = varPart?.var || 'field'
+      return `${key} less than ${value}`
+    }
+    if (rule['>=']) {
+      const [varPart, value] = rule['>=']
+      const key = varPart?.var || 'field'
+      return `${key} greater or equal ${value}`
+    }
+    if (rule['<=']) {
+      const [varPart, value] = rule['<=']
+      const key = varPart?.var || 'field'
+      return `${key} less or equal ${value}`
+    }
+    if (rule['!!']) {
+      const [varPart] = rule['!!']
+      const key = varPart?.var || 'field'
+      return `${key} is truthy`
+    }
+    
+    return 'Custom rule'
+  } catch (e) {
+    return 'Invalid rule'
+  }
+}
+
+const clearVisibleWhenRule = () => {
+  if (selectedField.value) {
+    selectedField.value.config.logic = selectedField.value.config.logic || {}
+    selectedField.value.config.logic.visibleWhen = undefined
+    updateFieldConfig()
+  }
+}
+
+
 // Helper function to create deep copies of fields
 const createDeepCopy = (field: BuilderField): BuilderField => {
   return {
@@ -414,6 +584,7 @@ const removeField = (id: string) => {
 
 const selectField = (id: string) => {
   formStore.selectedFieldId = id
+  syncLogicEditor()
 }
 
 const updateField = (id: string, updates: Partial<BuilderField>) => {
@@ -653,6 +824,25 @@ const clearSchema = () => {
   localStorage.removeItem('savedSchema')
 }
 
+const loadExampleSchema = async () => {
+  try {
+    const response = await fetch('/example.json')
+    const exampleSchema: FormSchema = await response.json()
+    
+    const mapped = mapSchemaToBuilderFields(exampleSchema)
+    formStore.builderFields = mapped
+    localBuilderFields.value = mapped.map(createDeepCopy)
+    formStore.loadSchema(exampleSchema)
+    successMessage.value = 'Loaded example schema'
+    showSuccess.value = true
+    showActionsDropdown.value = false
+  } catch (e) {
+    console.error('Failed to load example schema', e)
+    successMessage.value = 'Failed to load example'
+    showSuccess.value = true
+  }
+}
+
 const loadSavedSchemas = async () => {
   try {
     const raw = localStorage.getItem('savedSchema')
@@ -691,6 +881,7 @@ const loadSavedSchemas = async () => {
 onMounted(() => {
   // Initialize local array from store with deep copies
   localBuilderFields.value = formStore.builderFields.map(createDeepCopy)
+  syncLogicEditor()
   
   // Add event listeners for dropdown
   document.addEventListener('click', handleClickOutside)
