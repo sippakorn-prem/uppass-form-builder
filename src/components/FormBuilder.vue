@@ -4,19 +4,59 @@
     <div>
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-end items-center py-4">
-          <div class="flex space-x-3">
+          <div class="flex space-x-3 items-center">
             <button
               @click="togglePreview"
-              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
             >
               {{ formStore.isPreviewMode ? 'Edit Mode' : 'Preview' }}
             </button>
             <button
+              @click="saveSchema"
+              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
+            >
+              Save Schema
+            </button>
+            <button
               @click="exportSchema"
-              class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
             >
               Export Schema
             </button>
+
+            <!-- Renderer controls moved here -->
+            <button
+              @click="clearSchema"
+              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
+            >
+              Clear Schema
+            </button>
+            <button
+              @click="loadSavedSchemas"
+              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
+            >
+              Load Saved
+            </button>
+            <button
+              @click="loadExampleSchema"
+              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium"
+            >
+              Load Example
+            </button>
+            <label
+              for="builder-file-input"
+              class="px-4 py-2 bg-white text-gray-900 border-2 border-gray-400 rounded-md hover:bg-gray-50 hover:border-gray-500 transition-colors font-medium cursor-pointer"
+            >
+              Upload JSON
+            </label>
+            <input
+              id="builder-file-input"
+              ref="fileInput"
+              type="file"
+              accept=".json"
+              class="hidden"
+              @change="handleFileUpload"
+            />
           </div>
         </div>
       </div>
@@ -206,8 +246,8 @@
 
 <script setup lang="ts">
 import { useFormStore } from '@/stores/formStore'
-import type { BuilderField, FormField } from '@/types/form'
-import { computed, ref, watch } from 'vue'
+import type { BuilderField, FormField, FormSchema } from '@/types/form'
+import { computed, onMounted, ref, watch } from 'vue'
 import draggable from 'vuedraggable'
 import FormRenderer from './FormRenderer.vue'
 import NumberInput from './forms/NumberInput.vue'
@@ -216,6 +256,9 @@ import SelectInput from './forms/SelectInput.vue'
 import TextInput from './forms/TextInput.vue'
 
 const formStore = useFormStore()
+const fileInput = ref<HTMLInputElement>()
+
+// (intentionally blank - previous SecureStorage helper removed)
 
 // Local reactive array for drag and drop
 const localBuilderFields = ref<BuilderField[]>([])
@@ -314,6 +357,31 @@ const togglePreview = () => {
   formStore.isPreviewMode = !formStore.isPreviewMode
 }
 
+const saveSchema = async () => {
+  try {
+    const schema = formStore.generateSchema()
+    const schemaId = `form_${Date.now()}`
+    
+    // Save only one schema (overwrite any existing)
+    const savedSchema = {
+      id: schemaId,
+      name: schema.meta?.label || 'Untitled Form',
+      schema,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    
+    // Store as a single object for simplicity
+    localStorage.setItem('savedSchema', JSON.stringify(savedSchema))
+    // Clean up legacy array format if present
+    localStorage.removeItem('savedSchemas')
+    alert(`Schema saved successfully! ID: ${schemaId}`)
+  } catch (error) {
+    console.error('Error saving schema:', error)
+    alert('Failed to save schema. Please try again.')
+  }
+}
+
 const exportSchema = () => {
   const schema = formStore.generateSchema()
   const dataStr = JSON.stringify(schema, null, 2)
@@ -330,6 +398,124 @@ const onDragEnd = () => {
   // Update the store with the new order
   formStore.builderFields = [...localBuilderFields.value]
 }
+
+// Moved renderer actions
+const handleFileUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const schema = JSON.parse(e.target?.result as string) as FormSchema
+        formStore.loadSchema(schema)
+      } catch (error) {
+        alert('Invalid JSON file. Please check the format.')
+      }
+    }
+    reader.readAsText(file)
+  }
+}
+
+const clearSchema = () => {
+  formStore.currentSchema = null
+  formStore.formData = {}
+  formStore.validationErrors = []
+}
+
+const loadSavedSchemas = () => {
+  try {
+    const single = localStorage.getItem('savedSchema')
+    if (single) {
+      const saved = JSON.parse(single)
+      formStore.loadSchema(saved.schema)
+      alert(`Loaded schema: ${saved.name}`)
+      return
+    }
+    const legacy = JSON.parse(localStorage.getItem('savedSchemas') || '[]')
+    if (legacy && legacy.length > 0) {
+      const first = legacy[0]
+      localStorage.setItem('savedSchema', JSON.stringify(first))
+      localStorage.removeItem('savedSchemas')
+      formStore.loadSchema(first.schema)
+      alert(`Loaded schema: ${first.name}`)
+      return
+    }
+    alert('No saved schema found. Please save a schema first.')
+  } catch (error) {
+    alert('Failed to load saved schema. Please try again.')
+  }
+}
+
+const loadExampleSchema = () => {
+  const exampleSchema: FormSchema = {
+    title: 'Leave Request Form',
+    version: '1.0.0',
+    type: 'form',
+    meta: { label: 'ใบลา', description: 'แบบฟอร์มสำหรับกรอกข้อมูลใบลา' },
+    fields: [
+      { key: 'full_name', schema: { type: 'string', title: 'Full Name', minLength: 1, maxLength: 280 }, ui: { widget: 'text', label: 'ชื่อ', placeholder: 'กรอกชื่อ-นามสกุล', layout: 'normal', required: true }, logic: {} },
+      { key: 'duration', schema: { type: 'string', title: 'Duration', enum: ['half','full'] }, ui: { widget: 'radio', label: 'ลาทำไม', placeholder: 'หากลาเต็มวันกรุณากรอกวันด้านล่างด้วย', options: [{ label: 'ครึ่งวัน', value: 'half' }, { label: 'เต็มวัน', value: 'full' }], layout: 'normal', required: true }, logic: {} },
+      { key: 'days', schema: { type: 'integer', title: 'Days', minimum: 1, maximum: 1000000, default: 1 }, ui: { widget: 'number', label: 'ลากี่วัน', layout: 'normal', allow_decimal: false }, logic: { visibleWhen: { '==': [{ var: 'duration' }, 'full'] } } }
+    ],
+    validation: { ifThenElse: [ { if: { properties: { duration: { const: 'full' } }, required: ['duration'] }, then: { required: ['days'] } } ] },
+    submit: { label: 'Submit', action: '/api/form/submit', method: 'POST' }
+  }
+  formStore.loadSchema(exampleSchema)
+}
+
+// Load saved schema from localStorage on mount
+onMounted(() => {
+  try {
+    // Only load if no fields are already present
+    if (formStore.builderFields && formStore.builderFields.length > 0) return
+
+    const single = localStorage.getItem('savedSchema')
+    let saved: any | null = null
+    
+    if (single) {
+      saved = JSON.parse(single)
+    } else {
+      // Fallback to legacy array format
+      const legacy = JSON.parse(localStorage.getItem('savedSchemas') || '[]')
+      saved = Array.isArray(legacy) && legacy.length > 0 ? legacy[0] : null
+    }
+
+    if (!saved || !saved.schema || !Array.isArray(saved.schema.fields)) return
+
+    // Map schema fields to builder fields structure
+    const mapped = saved.schema.fields.map((f: any) => {
+      const type = f.ui?.widget || f.schema?.type || 'text'
+      const id = f.key || `${type}_${Math.random().toString(36).slice(2, 10)}`
+      return {
+        id,
+        type: type as 'text' | 'number' | 'select' | 'radio',
+        label: f.ui?.label || f.schema?.title || id,
+        required: Boolean(f.ui?.required),
+        config: {
+          key: f.key || id,
+          schema: f.schema || {},
+          ui: {
+            widget: type,
+            label: f.ui?.label || f.schema?.title || id,
+            layout: f.ui?.layout || 'normal',
+            placeholder: f.ui?.placeholder,
+            required: f.ui?.required,
+            options: f.ui?.options,
+            allow_decimal: f.ui?.allow_decimal
+          },
+          logic: f.logic || {}
+        }
+      }
+    })
+
+    // Update store and local state
+    formStore.builderFields = mapped
+    localBuilderFields.value = [...mapped]
+  } catch (e) {
+    console.error('Failed to load saved schema:', e)
+  }
+})
 
 const addOption = () => {
   if (selectedField.value) {

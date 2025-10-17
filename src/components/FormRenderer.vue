@@ -128,6 +128,26 @@ const handleSubmit = async () => {
 onMounted(() => {
   if (props.schema) {
     formStore.loadSchema(props.schema)
+  } else {
+    // Auto-load saved schema from localStorage
+    try {
+      const single = localStorage.getItem('savedSchema')
+      let saved: any | null = null
+      
+      if (single) {
+        saved = JSON.parse(single)
+      } else {
+        // Fallback to legacy array format
+        const legacy = JSON.parse(localStorage.getItem('savedSchemas') || '[]')
+        saved = Array.isArray(legacy) && legacy.length > 0 ? legacy[0] : null
+      }
+
+      if (saved && saved.schema) {
+        formStore.loadSchema(saved.schema)
+      }
+    } catch (e) {
+      console.error('Failed to load saved schema in renderer:', e)
+    }
   }
 })
 </script>
