@@ -219,7 +219,7 @@
                   placeholder="value"
                   class="px-2 py-2 border rounded text-sm flex-1"
                 />
-                <button type="button" @click="applySimpleRule" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 whitespace-nowrap">Apply</button>
+                <button type="button" @click="applySimpleRule" class="px-4 py-2 bg-gray-800 text-white rounded text-sm hover:bg-gray-900 whitespace-nowrap shadow-md">Apply</button>
               </div>
               <p class="text-xs text-gray-500 mt-1">Field is visible when this condition is true.</p>
             </div>
@@ -878,9 +878,51 @@ const loadSavedSchemas = async () => {
 
 
 // Initialize on mount
-onMounted(() => {
-  // Initialize local array from store with deep copies
-  localBuilderFields.value = formStore.builderFields.map(createDeepCopy)
+onMounted(async () => {
+  // Auto-load from localStorage if available
+  try {
+    const raw = localStorage.getItem('savedSchema')
+    if (raw) {
+      let saved: { schema: FormSchema }
+      try {
+        // Try decrypt first
+        saved = await decryptFromStorage<{ schema: FormSchema }>(raw)
+        console.log('BUILDER: decrypted result', saved)
+      } catch (_) {
+        // Fallback for legacy plaintext
+        saved = JSON.parse(raw) as { schema: FormSchema }
+        console.log('BUILDER: fallback plaintext result', saved)
+      }
+      
+      if (saved && saved.schema && Array.isArray(saved.schema.fields)) {
+        // Map schema to builder fields
+        const mapped = mapSchemaToBuilderFields(saved.schema)
+        formStore.builderFields = mapped
+        localBuilderFields.value = mapped.map(createDeepCopy)
+        formStore.loadSchema(saved.schema)
+        
+        // Select first field if available
+        if (mapped.length > 0 && mapped[0]) {
+          formStore.selectedFieldId = mapped[0].id
+        }
+        
+        console.log('BUILDER: loaded schema from localStorage')
+      }
+    }
+  } catch (error) {
+    console.error('BUILDER: Failed to load from localStorage', error)
+  }
+  
+  // Initialize local array from store with deep copies (fallback if no localStorage)
+  if (localBuilderFields.value.length === 0) {
+    localBuilderFields.value = formStore.builderFields.map(createDeepCopy)
+  }
+  
+  // Select first field if none is selected and we have fields
+  if (!formStore.selectedFieldId && localBuilderFields.value.length > 0 && localBuilderFields.value[0]) {
+    formStore.selectedFieldId = localBuilderFields.value[0].id
+  }
+  
   syncLogicEditor()
   
   // Add event listeners for dropdown

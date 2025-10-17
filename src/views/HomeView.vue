@@ -21,5 +21,39 @@
 </template>
 
 <script setup lang="ts">
-// Navigation buttons for Builder and Renderer routes
+import { useFormStore } from '@/stores/formStore'
+import type { FormSchema } from '@/types/form'
+import { encryptForStorage } from '@/utils/crypto'
+import { onMounted } from 'vue'
+
+const formStore = useFormStore()
+
+// Auto-load example when no data in localStorage
+onMounted(async () => {
+  try {
+    const saved = localStorage.getItem('savedSchema')
+    if (!saved) {
+      // No saved data, load example
+      const response = await fetch('/example.json')
+      const exampleSchema: FormSchema = await response.json()
+      
+      // Save to localStorage with encryption
+      const payload = {
+        id: `example_${Date.now()}`,
+        name: 'Example Form',
+        schema: exampleSchema,
+        updatedAt: new Date().toISOString()
+      }
+      const encrypted = await encryptForStorage(payload)
+      localStorage.setItem('savedSchema', encrypted)
+      
+      // Load into form store
+      formStore.loadSchema(exampleSchema)
+      
+      console.log('Auto-loaded example schema')
+    }
+  } catch (error) {
+    console.error('Failed to auto-load example schema:', error)
+  }
+})
 </script>
