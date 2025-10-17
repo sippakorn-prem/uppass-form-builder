@@ -20,6 +20,6 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 // Navigation buttons for Builder and Renderer routes
 </script>
