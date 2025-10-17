@@ -2,7 +2,7 @@ import { useFormStore } from '@/stores/formStore'
 import type { FormField } from '@/types/form'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import RadioInput from '../RadioInput.vue'
 
 describe('RadioInput', () => {

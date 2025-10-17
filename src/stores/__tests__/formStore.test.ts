@@ -13,6 +13,7 @@ describe('FormStore', () => {
   let store: ReturnType<typeof useFormStore>
 
   const mockSchema: FormSchema = {
+    title: 'Test Form',
     version: '1.0.0',
     type: 'form',
     meta: {
