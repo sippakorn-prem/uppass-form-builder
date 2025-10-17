@@ -1,7 +1,10 @@
 <template>
-  <router-view />
+  <div id="app">
+    <AppNavigation />
+    <router-view />
+  </div>
 </template>
 
 <script setup lang="ts">
-// App component with router view
+import AppNavigation from '@/components/AppNavigation.vue';
 </script>

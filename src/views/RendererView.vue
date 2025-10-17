@@ -1,14 +1,32 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Action Bar -->
+    <div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-end items-center py-4">
+          <div class="flex space-x-3">
+            <button
+              @click="clearSchema"
+              class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+            >
+              Clear Schema
+            </button>
+            <button
+              @click="loadExampleSchema"
+              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Load Example
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="max-w-4xl mx-auto py-8">
       <div class="bg-white rounded-lg shadow-sm border p-6">
-        <div class="mb-6">
-          <h1 class="text-3xl font-bold text-gray-800 mb-2">Form Renderer</h1>
-          <p class="text-gray-600">Load and test your form schemas</p>
-        </div>
         
         <!-- Schema Loader -->
-        <div class="mb-8 p-4 bg-gray-50 rounded-lg">
+        <div v-if="!formStore.currentSchema" class="mb-8 p-4 bg-gray-50 rounded-lg">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Load Form Schema</h3>
           <div class="space-y-4">
             <div>
@@ -21,16 +39,6 @@
                 class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               />
             </div>
-            
-            <div class="text-sm text-gray-500">
-              Or use the example schema:
-            </div>
-            <button
-              @click="loadExampleSchema"
-              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Load Example Schema
-            </button>
           </div>
         </div>
         
@@ -75,6 +83,12 @@ const handleFileUpload = (event: Event) => {
     }
     reader.readAsText(file)
   }
+}
+
+const clearSchema = () => {
+  formStore.currentSchema = null
+  formStore.formData = {}
+  formStore.validationErrors = []
 }
 
 const loadExampleSchema = () => {
