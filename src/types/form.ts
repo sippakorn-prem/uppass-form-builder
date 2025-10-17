@@ -33,6 +33,8 @@ export interface FormField {
     enum?: string[]
     default?: any
     items?: any
+    pattern?: string
+    validation?: any
   }
   ui: {
     widget: 'text' | 'number' | 'select' | 'radio' | 'checkbox' | 'date'
@@ -48,6 +50,7 @@ export interface FormField {
   }
   logic: {
     visibleWhen?: any
+    requiredWhen?: any
     enabledWhen?: any
   }
 }

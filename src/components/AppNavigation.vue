@@ -48,5 +48,4 @@
 </template>
 
 <script setup lang="ts">
-// Navigation component for the application
 </script>

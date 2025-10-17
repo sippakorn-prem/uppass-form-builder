@@ -27,6 +27,7 @@
         boxShadow: '0 0 0 1px #ef4444'
       } : {}"
       @input="handleInput"
+      @change="handleInput"
       @blur="handleBlur"
     />
     
@@ -46,7 +47,7 @@
 import { useFormStore } from '@/stores/formStore'
 import type { FormField } from '@/types/form'
 import InputNumber from '@/volt/InputNumber.vue'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 interface Props {
   field: FormField
@@ -76,15 +77,58 @@ const handleInput = () => {
   const numValue = localValue.value
   emit('update:modelValue', numValue as number)
   formStore.updateFieldValue(props.field.key, numValue)
+  
+  // Validate min/max immediately on input change
+  validateMinMax()
+}
+
+const validateMinMax = () => {
+  if (localValue.value !== null && localValue.value !== undefined) {
+    const value = localValue.value
+    
+    // Check minimum
+    if (props.field.schema.minimum !== undefined && value < props.field.schema.minimum) {
+      formStore.addValidationError(props.field.key, `${props.field.ui.label} must be at least ${props.field.schema.minimum}`)
+      return
+    }
+    
+    // Check maximum
+    if (props.field.schema.maximum !== undefined && value > props.field.schema.maximum) {
+      formStore.addValidationError(props.field.key, `${props.field.ui.label} must be at most ${props.field.schema.maximum}`)
+      return
+    }
+    
+    // Clear min/max errors if value is valid
+    formStore.validationErrors = formStore.validationErrors.filter(error => 
+      !(error.field === props.field.key && 
+        (error.message.includes('must be at least') || error.message.includes('must be at most')))
+    )
+  }
 }
 
 const handleBlur = () => {
+  validateMinMax()
   formStore.validateField(props.field.key)
 }
 
 watch(() => props.modelValue, (newValue) => {
   localValue.value = newValue || null
+  // Validate when value changes from outside
+  validateMinMax()
 })
+
+// Watch localValue changes for immediate validation
+watch(localValue, () => {
+  validateMinMax()
+}, { immediate: true })
+
+onMounted(() => {
+  validateMinMax()
+})
+
+watch(() => props.field, () => {
+  validateMinMax()
+}, { deep: true })
 </script>
 
 <style scoped>

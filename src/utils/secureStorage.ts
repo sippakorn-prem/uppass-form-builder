@@ -1,4 +1,3 @@
-// Secure storage utility that bypasses schema protection
 export class SecureStorage {
   private static readonly SCHEMA_KEY = 'savedSchemas'
   

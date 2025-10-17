@@ -224,6 +224,53 @@
               <p class="text-xs text-gray-500 mt-1">Field is visible when this condition is true.</p>
             </div>
 
+            <!-- Required When Rules -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Required When Rules</label>
+              <!-- Current Required When Rule Display -->
+              <div v-if="selectedField.config.logic?.requiredWhen" class="mb-3 p-2 bg-green-50 border border-green-200 rounded">
+                <div class="flex items-center justify-between">
+                  <div class="text-sm">
+                    <span class="font-medium text-green-800">Required when:</span>
+                    <span class="ml-2 text-green-700 font-mono text-xs">{{ formatRuleForDisplay(selectedField.config.logic.requiredWhen) }}</span>
+                  </div>
+                  <button 
+                    type="button" 
+                    @click="clearRequiredWhenRule"
+                    class="text-red-500 hover:text-red-700 text-sm"
+                    title="Remove required when rule"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <!-- Required When Rule Builder -->
+              <div class="mb-2 flex items-center gap-2">
+                <select v-model="requiredKey" class="px-2 py-2 border rounded text-sm flex-1">
+                  <option v-for="k in availableKeys" :key="k" :value="k">{{ k }}</option>
+                </select>
+                <select v-model="requiredOp" class="px-2 py-2 border rounded text-sm w-32">
+                  <option value="==">equals</option>
+                  <option value="!=">not equals</option>
+                  <option value=">">greater than</option>
+                  <option value="<">less than</option>
+                  <option value=">=">greater or equal</option>
+                  <option value="<=">less or equal</option>
+                  <option value="!!">is truthy</option>
+                </select>
+                <input
+                  v-if="requiredOp !== '!!'"
+                  v-model="requiredValue"
+                  type="text"
+                  placeholder="value"
+                  class="px-2 py-2 border rounded text-sm flex-1"
+                />
+                <button type="button" @click="applyRequiredWhenRule" class="px-4 py-2 bg-gray-800 text-white rounded text-sm hover:bg-gray-900 whitespace-nowrap shadow-md">Apply</button>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">Field is required when this condition is true.</p>
+            </div>
+
             <!-- Required -->
             <div class="flex items-center">
               <input
@@ -429,15 +476,12 @@ const successMessage = ref('')
 const showActionsDropdown = ref(false)
 const dropdownContainer = ref<HTMLElement>()
 
-// (intentionally blank - previous SecureStorage helper removed)
 
 // Local reactive array for drag and drop
 const localBuilderFields = ref<BuilderField[]>([])
 
-// JsonLogic editor state for selected field
 const logicText = ref('')
 const availableKeys = computed(() => {
-  // List keys from existing builder fields
   return localBuilderFields.value
     .map((f) => f.config.key || f.id)
     .filter(Boolean)
@@ -445,6 +489,9 @@ const availableKeys = computed(() => {
 const ruleKey = ref('')
 const ruleOp: any = ref('==')
 const ruleValue = ref('')
+const requiredKey = ref('')
+const requiredOp: any = ref('==')
+const requiredValue = ref('')
 
 const syncLogicEditor = () => {
   const f = selectedField.value
@@ -532,8 +579,35 @@ const clearVisibleWhenRule = () => {
   }
 }
 
+const applyRequiredWhenRule = () => {
+  const key = requiredKey.value || availableKeys.value[0]
+  if (!key || !selectedField.value) return
+  
+  let json: any
+  if (requiredOp.value === '!!') {
+    json = { '!!': [{ var: key }] }
+  } else {
+    const val: any = isNaN(Number(requiredValue.value)) ? requiredValue.value : Number(requiredValue.value)
+    json = { [requiredOp.value]: [{ var: key }, val] }
+  }
+  
+  // Apply to requiredWhen
+  if (selectedField.value) {
+    selectedField.value.config.logic = selectedField.value.config.logic || {}
+    selectedField.value.config.logic.requiredWhen = json
+    updateFieldConfig()
+  }
+}
 
-// Helper function to create deep copies of fields
+const clearRequiredWhenRule = () => {
+  if (selectedField.value) {
+    selectedField.value.config.logic = selectedField.value.config.logic || {}
+    selectedField.value.config.logic.requiredWhen = undefined
+    updateFieldConfig()
+  }
+}
+
+
 const createDeepCopy = (field: BuilderField): BuilderField => {
   return {
     ...field,
@@ -566,7 +640,6 @@ const generatedSchema = computed(() => {
 
 const addField = (type: string) => {
   formStore.addField(type as any)
-  // Get the newly added field from the store and add to local array with deep copy
   const newField = formStore.builderFields[formStore.builderFields.length - 1]
   if (newField) {
     localBuilderFields.value.push(createDeepCopy(newField))
@@ -575,7 +648,6 @@ const addField = (type: string) => {
 
 const removeField = (id: string) => {
   formStore.removeField(id)
-  // Remove the field from local array instead of resetting
   const localIndex = localBuilderFields.value.findIndex(f => f.id === id)
   if (localIndex !== -1) {
     localBuilderFields.value.splice(localIndex, 1)
@@ -622,7 +694,6 @@ const updateFieldConfig = () => {
 }
 
 const updateFieldValue = (_id: string, _value: any) => {
-  // This is just for preview - not stored
 }
 
 const generateSchemaFromFields = (fields: BuilderField[]): FormSchema => {
@@ -659,7 +730,6 @@ const generateSchemaFromFields = (fields: BuilderField[]): FormSchema => {
   }
 }
 
-// Map a FormSchema back into builder fields
 const mapSchemaToBuilderFields = (schema: FormSchema): BuilderField[] => {
   if (!schema.fields || !Array.isArray(schema.fields)) return []
   return schema.fields.map((f: any) => {
@@ -754,9 +824,7 @@ const saveSchema = async () => {
       schema: generateSchemaFromFields(localBuilderFields.value),
       updatedAt: new Date().toISOString()
     }
-    console.log('SAVE: payload before encrypt', payload)
     const encrypted = await encryptForStorage(payload)
-    console.log('SAVE: encrypted result', encrypted)
     localStorage.setItem('savedSchema', encrypted)
     successMessage.value = 'Saved to browser storage (encrypted)'
     showSuccess.value = true
@@ -846,7 +914,6 @@ const loadExampleSchema = async () => {
 const loadSavedSchemas = async () => {
   try {
     const raw = localStorage.getItem('savedSchema')
-    console.log('LOAD: raw from localStorage', raw)
     if (!raw) {
       successMessage.value = 'Nothing saved in browser'
       showSuccess.value = true
@@ -856,11 +923,9 @@ const loadSavedSchemas = async () => {
     try {
       // Try decrypt first
       saved = await decryptFromStorage<{ schema: FormSchema }>(raw)
-      console.log('LOAD: decrypted result', saved)
     } catch (_) {
       // Fallback for legacy plaintext
       saved = JSON.parse(raw) as { schema: FormSchema }
-      console.log('LOAD: fallback plaintext result', saved)
     }
     const mapped = mapSchemaToBuilderFields(saved.schema)
     formStore.builderFields = mapped
@@ -887,26 +952,21 @@ onMounted(async () => {
       try {
         // Try decrypt first
         saved = await decryptFromStorage<{ schema: FormSchema }>(raw)
-        console.log('BUILDER: decrypted result', saved)
       } catch (_) {
         // Fallback for legacy plaintext
         saved = JSON.parse(raw) as { schema: FormSchema }
-        console.log('BUILDER: fallback plaintext result', saved)
       }
       
       if (saved && saved.schema && Array.isArray(saved.schema.fields)) {
-        // Map schema to builder fields
         const mapped = mapSchemaToBuilderFields(saved.schema)
         formStore.builderFields = mapped
         localBuilderFields.value = mapped.map(createDeepCopy)
         formStore.loadSchema(saved.schema)
         
-        // Select first field if available
         if (mapped.length > 0 && mapped[0]) {
           formStore.selectedFieldId = mapped[0].id
         }
         
-        console.log('BUILDER: loaded schema from localStorage')
       }
     }
   } catch (error) {
@@ -918,7 +978,6 @@ onMounted(async () => {
     localBuilderFields.value = formStore.builderFields.map(createDeepCopy)
   }
   
-  // Select first field if none is selected and we have fields
   if (!formStore.selectedFieldId && localBuilderFields.value.length > 0 && localBuilderFields.value[0]) {
     formStore.selectedFieldId = localBuilderFields.value[0].id
   }

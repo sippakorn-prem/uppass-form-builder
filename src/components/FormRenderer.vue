@@ -19,7 +19,7 @@
       <!-- Form Fields -->
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <div 
-          v-for="field in formStore.visibleFields" 
+          v-for="field in formStore.fieldsWithRequiredStatus.filter(f => formStore.visibleFields.some(vf => vf.key === f.key))" 
           :key="field.key"
           class="transition-all duration-500 ease-in-out opacity-100 transform translate-y-0 animate-fade-in"
         >
@@ -95,7 +95,10 @@
               </svg>
             </div>
             <h3 class="text-lg font-medium text-gray-900 mb-2">Form Submitted Successfully!</h3>
-            <p class="text-sm text-gray-500 mb-4">Your form has been submitted successfully.</p>
+            <p class="text-sm text-gray-500 mb-2">Your form has been submitted successfully.</p>
+            <p v-if="formStore.currentSchema?.submit" class="text-xs text-gray-400 font-mono bg-gray-100 px-2 py-1 rounded">
+              [{{ formStore.currentSchema.submit.method }}] {{ formStore.currentSchema.submit.action }}
+            </p>
             <button
               @click="showSuccess = false"
               class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"

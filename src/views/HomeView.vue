@@ -50,7 +50,6 @@ onMounted(async () => {
       // Load into form store
       formStore.loadSchema(exampleSchema)
       
-      console.log('Auto-loaded example schema')
     }
   } catch (error) {
     console.error('Failed to auto-load example schema:', error)

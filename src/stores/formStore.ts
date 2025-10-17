@@ -33,6 +33,32 @@ export const useFormStore = defineStore('form', () => {
     })
   })
 
+  const fieldsWithRequiredStatus = computed(() => {
+    if (!currentSchema.value) return []
+    
+    return currentSchema.value.fields.map(field => {
+      let isRequired = field.ui.required || false
+      
+      // Check requiredWhen logic
+      if (field.logic.requiredWhen) {
+        try {
+          const shouldBeRequired = jsonLogic.apply(field.logic.requiredWhen, formData.value)
+          isRequired = isRequired || shouldBeRequired
+        } catch (error) {
+          console.warn('Error evaluating requiredWhen logic:', error)
+        }
+      }
+      
+      return {
+        ...field,
+        ui: {
+          ...field.ui,
+          required: isRequired
+        }
+      }
+    })
+  })
+
   // Actions
   const loadSchema = (schema: FormSchema) => {
     currentSchema.value = schema
@@ -78,10 +104,22 @@ export const useFormStore = defineStore('form', () => {
       }
     }
 
-    // Remove existing errors for this field
-    validationErrors.value = validationErrors.value.filter(e => e.field !== key)
+    validationErrors.value = validationErrors.value.filter(e => 
+      e.field !== key || 
+      (e.message.includes('must be at least') || e.message.includes('must be at most'))
+    )
     // Add new errors
     validationErrors.value.push(...errors)
+  }
+
+  const addValidationError = (key: string, message: string) => {
+    validationErrors.value = validationErrors.value.filter(error => error.field !== key)
+    
+    // Add new error
+    validationErrors.value.push({
+      field: key,
+      message: message
+    })
   }
 
   const validateForm = () => {
@@ -131,6 +169,11 @@ export const useFormStore = defineStore('form', () => {
     isSubmitting.value = true
     
     try {
+      // Log submit method and action
+      if (currentSchema.value?.submit) {
+        console.log(`[${currentSchema.value.submit.method}] ${currentSchema.value.submit.action}`)
+      }
+      
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
       return true
@@ -248,11 +291,13 @@ export const useFormStore = defineStore('form', () => {
     // Getters
     isValid,
     visibleFields,
+    fieldsWithRequiredStatus,
     
     // Actions
     loadSchema,
     updateFieldValue,
     validateField,
+    addValidationError,
     validateForm,
     submitForm,
     addField,

@@ -1,5 +1,3 @@
-// Simple AES-GCM encryption helpers using Web Crypto
-// NOTE: For demo purposes only. In production, manage keys securely.
 
 const enc = new TextEncoder()
 const dec = new TextDecoder()
