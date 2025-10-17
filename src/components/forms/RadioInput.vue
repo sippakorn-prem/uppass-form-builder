@@ -13,7 +13,10 @@
         <label 
           v-for="option in field.ui.options" 
           :key="option.value"
-          class="flex items-center cursor-pointer hover:bg-surface-50 p-3 rounded-md transition-all duration-200 border border-transparent hover:border-surface-200"
+          :class="[
+            'flex items-center cursor-pointer hover:bg-surface-50 p-3 rounded-md transition-all duration-200 border border-transparent hover:border-surface-200',
+            hasError ? 'border-red-200 bg-red-50' : ''
+          ]"
         >
           <input
             :id="`${field.key}_${option.value}`"
@@ -21,7 +24,10 @@
             type="radio"
             :name="field.key"
             :value="option.value"
-            class="h-4 w-4 text-primary focus:ring-primary border-surface-300 focus:ring-2 focus:ring-offset-2"
+            :class="[
+              'h-4 w-4 text-primary focus:ring-primary border-surface-300 focus:ring-2 focus:ring-offset-2',
+              hasError ? 'error-radio' : ''
+            ]"
             @change="handleChange"
             @blur="handleBlur"
           />
@@ -78,3 +84,21 @@ watch(() => props.modelValue, (newValue) => {
   localValue.value = newValue || ''
 })
 </script>
+
+<style scoped>
+.error-radio {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 1px #ef4444 !important;
+}
+
+.error-radio:hover {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 1px #ef4444 !important;
+}
+
+.error-radio:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+  outline: none !important;
+}
+</style>

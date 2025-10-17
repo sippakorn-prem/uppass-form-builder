@@ -17,7 +17,14 @@
       :invalid="hasError"
       optionLabel="label"
       optionValue="value"
-      class="w-full"
+      :class="[
+        'w-full',
+        hasError ? 'error-input' : ''
+      ]"
+      :style="hasError ? {
+        borderColor: '#ef4444',
+        boxShadow: '0 0 0 1px #ef4444'
+      } : {}"
       @change="handleChange"
       @blur="handleBlur"
     />
@@ -71,3 +78,21 @@ watch(() => props.modelValue, (newValue) => {
   localValue.value = newValue || ''
 })
 </script>
+
+<style scoped>
+.error-input {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 1px #ef4444 !important;
+}
+
+.error-input:hover {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 1px #ef4444 !important;
+}
+
+.error-input:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+  outline: none !important;
+}
+</style>

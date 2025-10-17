@@ -129,7 +129,7 @@
       </div>
 
       <!-- Form Canvas and Preview Row -->
-      <div class="grid grid-cols-2 gap-6">
+      <div>
         <!-- Form Canvas -->
         <div class="bg-white rounded-lg shadow-sm border">
           <div class="p-4 border-b border-gray-200">
