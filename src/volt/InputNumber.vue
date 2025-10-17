@@ -33,17 +33,17 @@ const theme = ref<InputNumberPassThroughOptions>({
         p-vertical:flex-col p-fluid:w-full`,
     pcInputText: {
         root: `appearance-none rounded-md outline-hidden flex-auto
-        bg-surface-0 dark:bg-surface-950
-        p-filled:bg-surface-50 dark:p-filled:bg-surface-800
-        text-surface-700 dark:text-surface-0
-        placeholder:text-surface-500 dark:placeholder:text-surface-400
-        border border-surface-300 dark:border-surface-700 
-        enabled:hover:border-surface-400 dark:enabled:hover:border-surface-600
+        bg-surface-0 light:bg-surface-950
+        p-filled:bg-surface-50 light:p-filled:bg-surface-800
+        text-surface-700 light:text-surface-0
+        placeholder:text-surface-500 light:placeholder:text-surface-400
+        border border-surface-300 light:border-surface-700 
+        enabled:hover:border-surface-400 light:enabled:hover:border-surface-600
         enabled:focus:border-primary
         disabled:bg-surface-200 disabled:text-surface-500 
-        dark:disabled:bg-surface-700 dark:disabled:text-surface-400
-        p-invalid:border-red-400 dark:p-invalid:border-red-300
-        p-invalid:placeholder:text-red-600 dark:p-invalid:placeholder:text-red-400
+        light:disabled:bg-surface-700 light:disabled:text-surface-400
+        p-invalid:border-red-400 light:p-invalid:border-red-300
+        p-invalid:placeholder:text-red-600 light:p-invalid:placeholder:text-red-400
         px-3 py-2 p-fluid:w-full
         p-small:text-sm p-small:px-[0.625rem] p-small:py-[0.375rem]
         p-large:text-lg p-large:px-[0.875rem] p-large:py-[0.625rem]
@@ -57,9 +57,9 @@ const theme = ref<InputNumberPassThroughOptions>({
         bg-transparent enabled:hover:bg-surface-100 enabled:active:bg-surface-200
         border border-surface-300 enabled:hover:border-surface-300 enabled:active:border-surface-300
         text-surface-400 enabled:hover:text-surface-500 enabled:active:text-surface-600
-        dark:bg-transparent dark:enabled:hover:bg-surface-800 dark:enabled:active:bg-surface-700
-        dark:border-surface-700 dark:enabled:hover:border-surface-700 dark:enabled:active:border-surface-700
-        dark:text-surface-400 dark:enabled:hover:text-surface-300 dark:enabled:active:text-surface-200
+        light:bg-transparent light:enabled:hover:bg-surface-800 light:enabled:active:bg-surface-700
+        light:border-surface-700 light:enabled:hover:border-surface-700 light:enabled:active:border-surface-700
+        light:text-surface-400 light:enabled:hover:text-surface-300 light:enabled:active:text-surface-200
         transition-colors duration-200 disabled:pointer-events-none
         p-stacked:relative p-stacked:flex-auto p-stacked:border-none
         p-stacked:p-0 p-stacked:rounded-tr-[5px]
@@ -70,9 +70,9 @@ const theme = ref<InputNumberPassThroughOptions>({
         bg-transparent enabled:hover:bg-surface-100 enabled:active:bg-surface-200
         border border-surface-300 enabled:hover:border-surface-300 enabled:active:border-surface-300
         text-surface-400 enabled:hover:text-surface-500 enabled:active:text-surface-600
-        dark:bg-transparent dark:enabled:hover:bg-surface-800 dark:enabled:active:bg-surface-700
-        dark:border-surface-700 dark:enabled:hover:border-surface-700 dark:enabled:active:border-surface-700
-        dark:text-surface-400 dark:enabled:hover:text-surface-300 dark:enabled:active:text-surface-200
+        light:bg-transparent light:enabled:hover:bg-surface-800 light:enabled:active:bg-surface-700
+        light:border-surface-700 light:enabled:hover:border-surface-700 light:enabled:active:border-surface-700
+        light:text-surface-400 light:enabled:hover:text-surface-300 light:enabled:active:text-surface-200
         transition-colors duration-200 disabled:pointer-events-none
         p-stacked:relative p-stacked:flex-auto p-stacked:border-none
         p-stacked:p-0 p-stacked:rounded-br-[5px]

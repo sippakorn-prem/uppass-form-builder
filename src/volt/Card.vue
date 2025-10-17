@@ -22,14 +22,14 @@ defineProps<Props>();
 
 const theme = ref<CardPassThroughOptions>({
     root: `flex flex-col rounded-xl
-        bg-surface-0 dark:bg-surface-900 
-        text-surface-700 dark:text-surface-0
+        bg-surface-0 light:bg-surface-900 
+        text-surface-700 light:text-surface-0
         shadow-md`,
     header: ``,
     body: `p-5 flex flex-col gap-2`,
     caption: `flex flex-col gap-2`,
     title: `font-medium text-xl`,
-    subtitle: `text-surface-500 dark:text-surface-400`,
+    subtitle: `text-surface-500 light:text-surface-400`,
     content: ``,
     footer: ``
 });
